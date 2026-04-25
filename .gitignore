@@ -1,0 +1,12 @@
+# Angular / UI
+EyehospitalUI/node_modules/
+EyehospitalUI/dist/
+
+# .NET API
+HospitalAPI/bin/
+HospitalAPI/obj/
+HospitalAPI/.vs/
+
+# General
+.vs/
+*.log
