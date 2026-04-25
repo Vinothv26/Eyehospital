@@ -1,13 +1,21 @@
 {
   "name": "eyehospital",
   "version": "0.0.0",
+  "private": true,
+  "packageManager": "npm@11.6.2",
+
+  "engines": {
+    "node": "18.x"
+  },
+
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
+
   "prettier": {
     "printWidth": 100,
     "singleQuote": true,
@@ -20,8 +28,7 @@
       }
     ]
   },
-  "private": true,
-  "packageManager": "npm@11.6.2",
+
   "dependencies": {
     "@angular/common": "^21.1.0",
     "@angular/compiler": "^21.1.0",
@@ -38,6 +45,7 @@
     "tslib": "^2.3.0",
     "xlsx": "^0.18.5"
   },
+
   "devDependencies": {
     "@angular/build": "^21.1.1",
     "@angular/cli": "^21.1.1",
