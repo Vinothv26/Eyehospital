@@ -1,0 +1,180 @@
+<!-- ================= FILTER ================= -->
+<div class="card shadow-sm border-0 mb-2">
+  <div class="card-body py-2">
+
+    <div class="row g-2 align-items-end">
+
+      <div class="col-md-3">
+        <label class="form-label small mb-1">From Date</label>
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="fromDate">
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label small mb-1">To Date</label>
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="toDate">
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label small mb-1">Camp Code</label>
+        <input type="text" class="form-control form-control-sm" [(ngModel)]="campCode">
+      </div>
+
+      <div class="col-md-3 d-flex gap-1">
+        <button class="btn btn-primary btn-sm w-100" (click)="applyFilter()">Filter</button>
+        <button class="btn btn-outline-secondary btn-sm w-100" (click)="resetFilter()">Reset</button>
+        <!-- <button class="btn btn-success btn-sm w-100" (click)="generateReport()">Generate Report</button> -->
+        <button class="btn btn-success btn-sm w-100" (click)="generateExcel()">Excel Report</button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= PAGINATION ================= -->
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
+
+  <!-- Left: Page Size Dropdown -->
+  <div>
+    <label class="me-2">Rows per page:</label>
+    <select class="form-select form-select-sm d-inline w-auto"
+            [(ngModel)]="pageSize"
+            (change)="onPageSizeChange()">
+      <option *ngFor="let size of pageSizeOptions" [value]="size">
+        {{ size }}
+      </option>
+    </select>
+  </div>
+
+  <!-- Right: Count + Navigation -->
+  <div class="d-flex align-items-center gap-2">
+
+    <!-- 👉 Record Count -->
+    <small class="text-muted">
+      Showing {{ pagedData.length }} of {{ patients.length }} records
+    </small>
+
+    <!-- 👉 Navigation -->
+    <div class="btn-group">
+
+      <button class="btn btn-sm btn-outline-primary"
+              (click)="changePage(currentPage - 1)"
+              [disabled]="currentPage === 1">
+        Prev
+      </button>
+
+      <button *ngFor="let page of [].constructor(totalPages); let i = index"
+              class="btn btn-sm"
+              [ngClass]="{
+                'btn-primary': currentPage === (i + 1),
+                'btn-outline-primary': currentPage !== (i + 1)
+              }"
+              (click)="changePage(i + 1)">
+        {{ i + 1 }}
+      </button>
+
+      <button class="btn btn-sm btn-outline-primary"
+              (click)="changePage(currentPage + 1)"
+              [disabled]="currentPage === totalPages">
+        Next
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+<!-- ================= TABLE ================= -->
+<div class="card shadow border-0">
+
+  <div class="card-body table-responsive p-0">
+
+   <table id="reportTable"
+       class="table table-striped table-hover table-bordered align-middle text-center mb-0">
+
+  <!-- ================= HEADER ================= -->
+  <thead class="table-dark sticky-top">
+
+  <!-- Row 1 -->
+  <tr>
+    <th rowspan="3">Campcode</th>
+    <th rowspan="3">Beneficiary Name</th>
+    <th rowspan="3">Gender</th>
+    <th rowspan="3">Age</th>
+
+    <!-- Address Group -->
+    <th colspan="4">Address</th>
+
+    <th rowspan="3">Contact</th>
+    <th rowspan="3">NID</th>
+    <th rowspan="3">Medical Record Number</th>
+
+    <!-- Pre Surgery Group -->
+    <th colspan="2">Pre Surgery Visual Acuity</th>
+
+    <th rowspan="3">Date of Surgery</th>
+    <th rowspan="3">Type of Surgery</th>
+    <th rowspan="3">Eye Operated (Left/Right)</th>
+    <th rowspan="3">Post Surgery Visual Acuity (Day 1)</th>
+    <th rowspan="3">Beneficiary Photo</th>
+  </tr>
+
+  <!-- Row 2 -->
+  <tr>
+    <!-- Address Sub Columns -->
+    <th>Village</th>
+    <th>Upazila</th>
+    <th>District</th>
+    <th>Country</th>
+
+    <!-- Pre Surgery Sub Columns -->
+    <th>Left</th>
+    <th>Right</th>
+  </tr>
+
+</thead>
+  <!-- ================= BODY ================= -->
+  <tbody>
+    <tr *ngFor="let p of pagedData">
+
+      <td>{{ p.campcode }}</td>
+      <td>{{ p.name }}</td>
+      <td>{{ p.gender }}</td>
+      <td>{{ p.age }}</td>
+
+      <!-- Address Columns -->
+      <td>{{ p.village }}</td>
+      <td>{{ p.upazila }}</td>
+      <td>{{ p.district }}</td>
+      <td>{{ p.country }}</td>
+
+      <td>{{ p.contactNo }}</td>
+      <td>{{ p.nid }}</td>
+      <td>{{ p.medicalRecordNumber }}</td>
+      <td>{{ p.preSurgeryVisualAcuityLeft }}</td>
+      <td>{{ p.preSurgeryVisualAcuityRight }}</td>
+      <td>{{ p.dateOfSurgery | date:'dd-MM-yyyy' }}</td>
+      <td>{{ p.typeOfSurgery }}</td>
+      <td>{{ p.eyeOperated }}</td>
+      <td>{{ p.postSurgeryVisualAcuity }}</td>
+
+      <td>
+        <img *ngIf="p.beneficiaryPhoto"
+             [src]="'data:image/png;base64,' + p.beneficiaryPhoto"
+             width="50"
+             height="50"
+             class="rounded"
+             style="object-fit:cover;">
+        <span *ngIf="!p.beneficiaryPhoto">No Photo</span>
+      </td>
+
+    </tr>
+  </tbody>
+
+</table>
+
+    <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+    </div>
+
+  </div>
+</div>
