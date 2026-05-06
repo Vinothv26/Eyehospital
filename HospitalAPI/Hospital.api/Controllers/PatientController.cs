@@ -1,6 +1,9 @@
-﻿using Hospital.api.Models;
+using Hospital.api.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics.Metrics;
+using Microsoft.IdentityModel.Tokens;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Processing;
 
 namespace Hospital.api.Controllers
 {
@@ -15,6 +18,23 @@ namespace Hospital.api.Controllers
             _context = context;
         }
 
+        // ================= IMAGE COMPRESSION =================
+        private byte[] CompressImage(byte[] imageBytes)
+        {
+            using var image = Image.Load(imageBytes);
+
+            image.Mutate(x => x.Resize(new ResizeOptions
+            {
+                Size = new Size(800, 800),
+                Mode = ResizeMode.Max
+            }));
+
+            using var ms = new MemoryStream();
+            image.Save(ms, new JpegEncoder { Quality = 50 });
+
+            return ms.ToArray();
+        }
+
         // ================= GET ALL =================
         [HttpGet]
         public IActionResult GetPatients(DateTime? fromDate, DateTime? toDate, string? campCode)
@@ -23,16 +43,18 @@ namespace Hospital.api.Controllers
             {
                 var query = _context.Patients.AsQueryable();
 
-                // Date filter
+                // ✅ FIXED DATE FILTER
                 if (fromDate.HasValue && toDate.HasValue)
                 {
+                    var from = fromDate.Value.Date;
+                    var to = toDate.Value.Date.AddDays(1);
+
                     query = query.Where(x =>
-                        x.DateOfSurgery.HasValue &&
-                        x.DateOfSurgery.Value.Date >= fromDate.Value.Date &&
-                        x.DateOfSurgery.Value.Date <= toDate.Value.Date);
+                        x.DateOfSurgery != null &&
+                        x.DateOfSurgery >= from &&
+                        x.DateOfSurgery < to);
                 }
 
-                // CampCode filter
                 if (!string.IsNullOrEmpty(campCode))
                 {
                     query = query.Where(x => x.Campcode == campCode);
@@ -59,8 +81,9 @@ namespace Hospital.api.Controllers
                     p.EyeOperated,
                     p.PostSurgeryVisualAcuity,
 
-                    BeneficiaryPhoto = p.BeneficiaryPhoto != null
-                        ? Convert.ToBase64String(p.BeneficiaryPhoto)
+                    // ✅ USE COMPRESSED IMAGE
+                    BeneficiaryPhoto = p.BeneficiaryPhotoCompressed != null
+                        ? Convert.ToBase64String(p.BeneficiaryPhotoCompressed)
                         : null
                 }).ToList();
 
@@ -76,7 +99,7 @@ namespace Hospital.api.Controllers
             }
         }
 
-        // ================= Global search =================
+        // ================= GLOBAL SEARCH =================
         [HttpGet("globalsearch")]
         public IActionResult GetPatientsDetails(string searchText)
         {
@@ -84,11 +107,12 @@ namespace Hospital.api.Controllers
             {
                 var query = _context.Patients.AsQueryable();
 
-
-                // Global filter
                 if (!string.IsNullOrEmpty(searchText))
                 {
-                    query = query.Where(x => x.MedicalRecordNumber.Contains(searchText) || x.ContactNo.Contains(searchText) || x.Name.Contains(searchText));
+                    query = query.Where(x =>
+                        x.MedicalRecordNumber.Contains(searchText) ||
+                        x.ContactNo.Contains(searchText) ||
+                        x.Name.Contains(searchText));
                 }
 
                 var result = query.Select(p => new
@@ -112,10 +136,13 @@ namespace Hospital.api.Controllers
                     p.EyeOperated,
                     p.PostSurgeryVisualAcuity,
 
-                    BeneficiaryPhoto = p.BeneficiaryPhoto != null
-                        ? Convert.ToBase64String(p.BeneficiaryPhoto)
+                    // ✅ COMPRESSED IMAGE
+                    BeneficiaryPhoto = p.BeneficiaryPhotoCompressed != null
+                        ? Convert.ToBase64String(p.BeneficiaryPhotoCompressed)
                         : null
-                }).Take(10).ToList();
+                })
+                .Take(10)
+                .ToList();
 
                 return Ok(result);
             }
@@ -159,18 +186,29 @@ namespace Hospital.api.Controllers
                 p.EyeOperated,
                 p.PostSurgeryVisualAcuity,
 
-                BeneficiaryPhoto = p.BeneficiaryPhoto != null
-                    ? Convert.ToBase64String(p.BeneficiaryPhoto)
+                // ✅ COMPRESSED IMAGE
+                BeneficiaryPhoto = p.BeneficiaryPhotoCompressed != null
+                    ? Convert.ToBase64String(p.BeneficiaryPhotoCompressed)
                     : null
             });
         }
 
+        
         // ================= CREATE =================
         [HttpPost]
         public IActionResult AddPatient([FromBody] PatientDto dto)
         {
             if (dto == null)
                 return BadRequest("Invalid data");
+
+            byte[]? original = null;
+            byte[]? compressed = null;
+
+            if (!string.IsNullOrEmpty(dto.BeneficiaryPhoto))
+            {
+                original = Convert.FromBase64String(dto.BeneficiaryPhoto);
+                compressed = CompressImage(original);
+            }
 
             var patient = new Patient
             {
@@ -192,9 +230,8 @@ namespace Hospital.api.Controllers
                 EyeOperated = dto.EyeOperated,
                 PostSurgeryVisualAcuity = dto.PostSurgeryVisualAcuity,
 
-                BeneficiaryPhoto = string.IsNullOrEmpty(dto.BeneficiaryPhoto)
-                    ? null
-                    : Convert.FromBase64String(dto.BeneficiaryPhoto)
+                BeneficiaryPhoto = original,
+                BeneficiaryPhotoCompressed = compressed
             };
 
             _context.Patients.Add(patient);
@@ -232,7 +269,11 @@ namespace Hospital.api.Controllers
 
             if (!string.IsNullOrWhiteSpace(dto.BeneficiaryPhoto))
             {
-                existing.BeneficiaryPhoto = Convert.FromBase64String(dto.BeneficiaryPhoto);
+                var original = Convert.FromBase64String(dto.BeneficiaryPhoto);
+                var compressed = CompressImage(original);
+
+                existing.BeneficiaryPhoto = original;
+                existing.BeneficiaryPhotoCompressed = compressed;
             }
 
             _context.SaveChanges();
