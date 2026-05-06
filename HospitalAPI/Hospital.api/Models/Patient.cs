@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Hospital.api.Models
@@ -52,12 +52,17 @@ namespace Hospital.api.Models
         [StringLength(50)]
         public string PostSurgeryVisualAcuity { get; set; }
 
+        // BASE64 from Angular
+        // ✅ ORIGINAL
         public byte[]? BeneficiaryPhoto { get; set; }
+
+        // ✅ ADD THIS (COMPRESSED)
+        public byte[]? BeneficiaryPhotoCompressed { get; set; }
     }
 
     public class PatientDto
     {
-        public string Campcode {  get; set; }
+        public string Campcode { get; set; }
         public int Id { get; set; }
         public string Name { get; set; }
         public string Gender { get; set; }
@@ -82,4 +87,4 @@ namespace Hospital.api.Models
         // BASE64 from Angular
         public string? BeneficiaryPhoto { get; set; }
     }
-}
+    }
